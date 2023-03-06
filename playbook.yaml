@@ -1,0 +1,77 @@
+- name: Is everything up?
+  hosts: all
+  become: yes
+  tasks:
+    - name: ping from nodes
+      ansible.builtin.ping:
+    - name: hello world
+      ansible.builtin.debug:
+        msg: Hello World 
+
+    - name: Install required packages
+      community.general.pacman:
+        name:
+          - docker
+          - docker-compose
+          - git
+          - rsync
+          - openssl
+    - name: Start docker engine
+      ansible.builtin.service:
+        name: docker
+        state: started 
+
+
+    - name: generate SSH keys
+      become: no
+      openssh_keypair:
+        path: /tmp/jenkins_rsa
+        type: rsa
+        size: 4096
+        state: present
+      delegate_to: localhost
+
+    - name: deploy pub keys for jenkins
+      become: yes
+      authorized_key:
+        user: ansible
+        path: /home/ansible/.ssh/jenkins_rsa.pub
+        key: "{{ lookup ('file','/tmp/jenkins_rsa.pub')}}"
+        state: present
+    
+- hosts: localhost
+  tasks:
+    - name: copy private keys for jenkins
+      synchronize:
+        src: /tmp/jenkins_rsa
+        dest: /home/ansible/.ssh/jenkins_rsa
+      delegate_to: 10.125.25.88
+
+
+- name: install tests servers
+  hosts: test
+
+  # devenir sudo 
+  become: yes
+  tasks:
+    - name: Create working directory
+      ansible.builtin.file:
+        path: /home/ansible/git/cloned
+        owner: ansible
+        group: ansible
+        state: directory
+        mode: '0755'
+
+    - name: git clone
+      ansible.builtin.git:
+        repo: 'https://framagit.org/bkoj/freezer.git'
+        dest: /home/ansible/git/cloned/Freezer
+        version: main
+
+    - name: launch Freezer app
+      ansible.builtin.shell: cd /home/ansible/git/cloned/Freezer && bash init.sh 
+
+
+
+
+

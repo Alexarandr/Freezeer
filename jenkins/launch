@@ -1,0 +1,1 @@
+docker run --name jen --network freeze --ip 1.2.3.40 --env SSH_PRIVATE_KEY="$(cat jenkins_rsa)" --env JENKINS_ADMIN_ID=admin --env JENKINS_ADMIN_PASSWORD=password my_jenkins 

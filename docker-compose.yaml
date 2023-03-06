@@ -1,0 +1,73 @@
+version: '2'
+services:
+  agent:
+    image: agent
+    build:
+      context: agent_ssh
+      dockerfile: agent.Dockerfile
+    networks:
+      freeze:
+        ipv4_address: 1.2.3.20
+
+
+  jen:
+    image: my_jenkins
+    build:
+      context: jenkins
+      dockerfile: jenkins.Dockerfile
+    networks:
+      freeze:
+        ipv4_address: 1.2.3.30
+    environment:
+      - JENKINS_ADMIN_ID=admin
+      - JENKINS_ADMIN_PASSWORD=admin
+  my_proftpd:
+    image: my_proftpd
+    build:
+      context: proftpd
+      dockerfile: proftpd.Dockerfile
+    networks:
+      freeze:
+        ipv4_address: 1.2.3.40
+    volumes:
+      - nginx_pro:/home/jenkins/cgi-bin/ 
+    environment:
+      - PASV_ADDRESS=1.2.3.40
+    ports:
+      - "21:21"
+  my_nginx:
+    image: my_nginx
+    build: 
+      context: nginx
+      dockerfile: nginx.Dockerfile
+    networks:
+      freeze:
+        ipv4_address: 1.2.3.10
+    volumes:
+      - nginx_pro:/var/www/cgi-bin/
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+  my_postgres:
+    image: my_postgres
+    build:
+      context: postgres
+      dockerfile: postgres.Dockerfile
+    networks:
+      freeze:
+        ipv4_address: 1.2.3.50
+    environment:
+      - POSTGRES_PASSWORD=password
+
+
+volumes:
+  nginx_pro:
+
+networks:
+  freeze:
+    driver: bridge
+    ipam:
+     config:
+     - subnet: 1.2.3.0/24
+       gateway: 1.2.3.1

@@ -1,0 +1,51 @@
+jenkins:
+  nodes:
+    - permanent:
+        labelString: "linux docker test"
+        mode: NORMAL
+        name: "agent"
+        numExecutors: 4
+        remoteFS: "/home/jenkins"
+        launcher:
+          SSHLauncher:
+            host: "1.2.3.20"
+            port: 22
+            credentialsId: agent
+            launchTimeoutSeconds: 60
+            maxNumRetries: 3
+            retryWaitTime: 30
+            sshHostKeyVerificationStrategy:
+              manuallyTrustedKeyVerificationStrategy:
+                requireInitialManualTrust: false
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+       - id: ${JENKINS_ADMIN_ID}
+         password: ${JENKINS_ADMIN_PASSWORD}
+  
+  authorizationStrategy:
+      globalMatrix:
+        permissions:
+          - "Overall/Administer:admin"
+          - "Overall/Read:authenticated"
+
+jobs:
+  - file: /usr/local/seedjob.groovy
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - basicSSHUserPrivateKey:
+              scope: SYSTEM
+              id: agent
+              username: jenkins
+              description: "SSH passphrase with private key file. Private key provided"
+              privateKeySource:
+                directEntry:
+                  privateKey: ${readFile:/var/jenkins_home/private}
+
+
+unclassified:
+  location:
+    url: http://1.2.3.40:8080/
